@@ -3,7 +3,7 @@ import './App.css'
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-    apiKey: "",
+    apiKey: localStorage.getItem("OPENAI_API_KEY") || "",
     dangerouslyAllowBrowser: true
 });
 
