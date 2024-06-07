@@ -185,6 +185,16 @@ function App() {
         }
     }
 
+    const deleteRecording = (key: string) => {
+        const request = window.indexedDB.open(DB_NAME);
+        request.onsuccess = (e) => {
+            const db = request.result;
+            const transaction = db.transaction([DB_NAME], "readwrite");
+            transaction.objectStore(DB_NAME).delete(key);
+            setRecordings(p => p.filter(x => x.label !== key));
+        };
+    }
+
     return (
         <>
             {mediaRecorder ? <div>
@@ -210,6 +220,9 @@ function App() {
                                     <button onClick={() => transcribe(r.label)}>Transcribe</button>
                                     : r.transcription
                             }
+                            <br/>
+                            <button onClick={() => deleteRecording(r.label)}>Delete</button>
+                            <hr/>
                         </div>
                     ))}
             </div>
