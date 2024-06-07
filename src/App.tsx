@@ -1,15 +1,90 @@
 import {useEffect, useState} from 'react'
 import './App.css'
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+    apiKey: "",
+    dangerouslyAllowBrowser: true
+});
 
 const DB_NAME = "recordings";
 
 function App() {
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-    const [recordings, setRecordings] = useState<{ label: string, value: string }[]>([]);
+    const [recordings, setRecordings] = useState<{ label: string, url: string, transcription: string }[]>([]);
     const [recordingState, setRecordingState] = useState<RecordingState>("inactive");
+
+    const [online, setOnline] = useState<boolean>(navigator.onLine);
+
+    window.addEventListener("online", () => {
+        setOnline(true);
+    });
+
+    window.addEventListener("offline", () => {
+        setOnline(false);
+    });
+
+    useEffect(() => {
+        recordings.forEach(r => {
+            if (r.transcription === "") {
+                transcribe(r.label);
+            }
+        })
+    }, [online]);
+
+    const transcribe = (clipName: string, blob?: Blob) => {
+        if (!blob) {
+            const request = window.indexedDB.open(DB_NAME);
+            request.onsuccess = (e) => {
+                const db = request.result;
+                const transaction = db.transaction([DB_NAME]);
+                transaction.objectStore(DB_NAME).get(clipName).onsuccess = function (ev) {
+                    const r = (ev.target! as any).result as {
+                        audio: Blob,
+                        transcription: string,
+                    };
+                    transcribe(clipName, r.audio);
+                };
+            };
+            return;
+        }
+
+        openai.audio.transcriptions.create({
+            file: new File([blob], "audio.ogg"),
+            model: "whisper-1",
+        }).then((result) => {
+            const r = window.indexedDB.open(DB_NAME);
+            r.onsuccess = (e) => {
+                const d = r.result;
+                const t = d.transaction([DB_NAME], "readwrite");
+
+                t.objectStore(DB_NAME).put({
+                    transcription: result.text,
+                    audio: blob
+                }, clipName);
+
+                setRecordings(p => [
+                    ...p.filter(x => x.label !== clipName),
+                    {
+                        ...p.find(x => x.label === clipName)!,
+                        transcription: result.text
+                    }
+                ]);
+
+            };
+        });
+    }
 
     useEffect(() => {
         const request = window.indexedDB.open(DB_NAME);
+
+        request.onupgradeneeded = (event: any) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(DB_NAME)) {
+                db.createObjectStore(DB_NAME);
+            }
+        };
+
         request.onsuccess = (e) => {
             const db = request.result;
             const transaction = db.transaction([DB_NAME]);
@@ -21,8 +96,9 @@ function App() {
                     return;
                 }
                 setRecordings(p => [...p, {
-                    value: window.URL.createObjectURL(r.value),
+                    url: window.URL.createObjectURL(r.value.audio),
                     label: String(r.key),
+                    transcription: r.value.transcription
                 }]);
                 r.continue();
             };
@@ -50,28 +126,34 @@ function App() {
 
                             const request = window.indexedDB.open(DB_NAME);
 
-                            request.onupgradeneeded = (event: any) => {
-                                const db = event.target.result;
-                                if (!db.objectStoreNames.contains(DB_NAME)) {
-                                    db.createObjectStore(DB_NAME);
-                                }
-                            };
-
                             request.onsuccess = (e) => {
                                 const db = request.result;
                                 const transaction = db.transaction([DB_NAME], "readwrite");
-                                transaction.objectStore(DB_NAME).put(blob, clipName).onsuccess
+                                transaction.objectStore(DB_NAME).put({
+                                    transcription: "",
+                                    audio: blob
+                                }, clipName);
+
+                                if (openai.apiKey && navigator.onLine) {
+                                    transcribe(clipName, blob);
+                                }
+
                                 transaction.objectStore(DB_NAME).get(clipName).onsuccess = function (event) {
-                                    const r = (event.target! as any).result;
+                                    const r = (event.target! as any).result as {
+                                        audio: Blob,
+                                        transcription: string,
+                                    };
+
                                     setRecordings(p => [...p, {
-                                        value: window.URL.createObjectURL(r),
+                                        url: window.URL.createObjectURL(r.audio),
                                         label: clipName,
+                                        transcription: r.transcription,
                                     }]);
 
                                     db.close();
                                 };
-                            };
 
+                            };
                             stream.getTracks().forEach(t => t.stop());
                             setMediaRecorder(null);
                         };
@@ -121,7 +203,13 @@ function App() {
                         <div key={r.label}>
                             {r.label}
                             <br/>
-                            <audio key={ix} controls src={r.value}/>
+                            <audio key={ix} controls src={r.url}/>
+                            <br/>
+                            {
+                                r.transcription === "" ?
+                                    <button onClick={() => transcribe(r.label)}>Transcribe</button>
+                                    : r.transcription
+                            }
                         </div>
                     ))}
             </div>
