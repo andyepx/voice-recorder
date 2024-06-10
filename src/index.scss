@@ -15,17 +15,18 @@
   --theme-grey: #E8EDF1;
   --theme-grey-dark: #6B7280;
   --theme-text: #213547;
-  --theme-background: #f9f9f9;
+  --theme-background: #FEFEFE;
 
   color: var(--theme-text);
   background-color: var(--theme-background);
 }
 
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 a {
@@ -41,7 +42,6 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }

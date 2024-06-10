@@ -1,4 +1,4 @@
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 
 // Inspired by https://aerik.github.io/NoteDetector.htm
 // interesting:  http://www.phy.mtu.edu/~suits/Physicsofmusic.html
@@ -114,34 +114,50 @@ const notes: { n: string, h: number, power?: number }[] = [
     // {n: 'B8', h: 7902.13}
 ];
 
-export function FrequencyChart({stream}: { stream: MediaStream }) {
-
+export function FrequencyChart({mediaRecorder}: { mediaRecorder: MediaRecorder | null }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [intervalId, setIntervalId] = useState<number | null>(null);
 
-    const audioCtx = new window.AudioContext();
-    const analyser = audioCtx.createAnalyser();
-    analyser.smoothingTimeConstant = 0.2; //default is 0.8, less is more responsive
-    analyser.minDecibels = -95; //-100 is default and is more sensitive (more noise)
-    analyser.fftSize = 8192 * 4; //need at least 8192 to detect differences in low notes
-    const sampleRate = audioCtx.sampleRate;
-    const gainNode = audioCtx.createGain();
-    gainNode.connect(audioCtx.destination);
-
-    const hertzBinSize = sampleRate / analyser.fftSize;
-    console.log("bin size: " + hertzBinSize);
-    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
-    const buflen = frequencyData.length;
-    getTones();
+    let analyser: AnalyserNode | null = null;
+    let hertzBinSize = 1;
+    let frequencyData = new Uint8Array(1);
 
     useEffect(() => {
-        if (stream) {
-            const micSource = audioCtx.createMediaStreamSource(stream);
+        if (mediaRecorder) {
+            clearCanvas();
+
+            const audioCtx = new AudioContext();
+            analyser = audioCtx.createAnalyser();
+            analyser.smoothingTimeConstant = 0.2; //default is 0.8, less is more responsive
+            analyser.minDecibels = -95; //-100 is default and is more sensitive (more noise)
+            analyser.fftSize = 8192 * 4; //need at least 8192 to detect differences in low notes
+            const sampleRate = audioCtx.sampleRate;
+            const gainNode = audioCtx.createGain();
+            gainNode.connect(audioCtx.destination);
+            hertzBinSize = sampleRate / analyser.fftSize;
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+            const micSource = audioCtx.createMediaStreamSource(mediaRecorder.stream);
             micSource.connect(gainNode);
             micSource.connect(analyser);
+
+            setIntervalId(setInterval(getTones, 50) as unknown as number);
+        } else {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+            clearCanvas();
         }
-    }, []);
+    }, [mediaRecorder]);
+
 
     function getTones() {
+        if (!analyser) {
+            clearCanvas();
+            return;
+        }
+
+        const buflen = frequencyData.length;
         analyser.getByteFrequencyData(frequencyData);
         let count = 0;
         let total = 0;
@@ -187,34 +203,85 @@ export function FrequencyChart({stream}: { stream: MediaStream }) {
         }
 
         drawNotes();
-        setTimeout(function () {
-            requestAnimationFrame(getTones)
-        }, 50);
     }
 
     function drawNotes() {
         if (!canvasRef.current) return;
 
         const ctx = canvasRef.current!.getContext("2d")!;
-        canvasRef.current!.height = 500;
+        canvasRef.current!.height = 300;
         canvasRef.current!.width = 1000;
 
-        const scale = canvasRef.current!.width / (notes[notes.length - 1].h - notes[0].h);
+        ctx.lineWidth = 3;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
 
+        const scaleX = canvasRef.current!.width / (notes[notes.length - 1].h - notes[0].h);
+
+        ctx.strokeStyle = "#4058F2";
         ctx.beginPath();
-        // ctx.moveTo(0, canvasRef.current!.height / 2);
-        // ctx.lineTo(canvasRef.current!.width, canvasRef.current!.height / 2);
-
-        ctx.moveTo(notes[0].h * scale, canvasRef.current!.height / 2);
-
+        ctx.moveTo(notes[0].h * scaleX, canvasRef.current!.height / 2);
         notes.forEach((n, i) => {
             if (i > 0) {
-                ctx.lineTo(n.h * scale, canvasRef.current!.height / 2 - (n.power || 0));
+                ctx.lineTo(n.h * scaleX, (canvasRef.current!.height / 2 - (n.power || 0) * 0.5));
             }
-            // ctx.fillRect(n.h * scale, canvasRef.current!.height / 2 - (n.power || 0), 2, 2);
         });
-
         ctx.stroke();
+
+        ctx.strokeStyle = "rgba(64,88,242,.3)";
+        ctx.beginPath();
+        ctx.moveTo(notes[0].h * scaleX, canvasRef.current!.height / 2);
+        notes.forEach((n, i) => {
+            if (i > 0) {
+                ctx.lineTo(n.h * scaleX, (canvasRef.current!.height / 2 + (n.power || 0) * 0.5));
+            }
+        });
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgb(233,81,209)";
+        ctx.beginPath();
+        ctx.moveTo(notes[0].h * scaleX, canvasRef.current!.height / 2);
+        notes.forEach((n, i) => {
+            if (i > 0) {
+                ctx.lineTo(n.h * scaleX - 8, (canvasRef.current!.height / 2 - (n.power || 0) * 0.5));
+            }
+        });
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(233,81,209,.3)";
+        ctx.beginPath();
+        ctx.moveTo(notes[0].h * scaleX, canvasRef.current!.height / 2);
+        notes.forEach((n, i) => {
+            if (i > 0) {
+                ctx.lineTo(n.h * scaleX - 8, (canvasRef.current!.height / 2 + (n.power || 0) * 0.5));
+            }
+        });
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgb(116,196,248)";
+        ctx.beginPath();
+        ctx.moveTo(notes[0].h * scaleX, canvasRef.current!.height / 2);
+        notes.forEach((n, i) => {
+            if (i > 0) {
+                ctx.lineTo(n.h * scaleX + 8, (canvasRef.current!.height / 2 - (n.power || 0) * 0.5));
+            }
+        });
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(116,196,248,.3)";
+        ctx.beginPath();
+        ctx.moveTo(notes[0].h * scaleX, canvasRef.current!.height / 2);
+        notes.forEach((n, i) => {
+            if (i > 0) {
+                ctx.lineTo(n.h * scaleX + 8, (canvasRef.current!.height / 2 + (n.power || 0) * 0.5));
+            }
+        });
+        ctx.stroke();
+    }
+
+    function clearCanvas() {
+        const ctx = canvasRef.current!.getContext("2d")!;
+        ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
     }
 
     return <>

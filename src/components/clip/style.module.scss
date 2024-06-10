@@ -8,9 +8,9 @@
   border: 2px solid var(--theme-grey);
   transition: all 0.2s ease-in-out;
   overflow: hidden;
-  margin: 1rem;
+  margin: .5rem;
 
-  width: 500px;
+  width: calc(33% - 1rem);
 
   &:hover, &.active {
     box-shadow: 0 0 3px var(--theme-pink);

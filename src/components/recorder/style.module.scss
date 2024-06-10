@@ -1,0 +1,34 @@
+.recorder {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 300px;
+
+  background: linear-gradient(to bottom, white, var(--theme-grey));
+
+  button {
+    border-radius: 50%;
+    margin: .25rem;
+    background: white;
+
+    position: relative;
+    z-index: 1;
+
+    width: 8rem;
+    height: 8rem;
+
+    &.small {
+      width: 4rem;
+      height: 4rem;
+    }
+  }
+
+  canvas {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+  }
+}
