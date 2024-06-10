@@ -1,9 +1,11 @@
 import {useEffect, useState} from 'react'
-import './App.css'
+import style from './app.module.scss'
+
 import OpenAI from 'openai';
-import {getObjectStore} from "./objectStore.ts";
+import {getObjectStore} from "./utils/objectStore.ts";
 import {Recording, RecordingData} from "./types";
-import {DetectFrequency} from "./detectFrequency.tsx";
+import {FrequencyChart} from "./components/frequencyChart/frequencyChart.tsx";
+import {Clip} from "./components/clip/clip.tsx";
 
 const openai = new OpenAI({
     apiKey: localStorage.getItem("OPENAI_API_KEY") || "",
@@ -36,6 +38,8 @@ function App() {
     }, [online]);
 
     const transcribe = async (clipName: string, blob?: Blob) => {
+        if (!online) return;
+
         if (!blob) {
             getObjectStore().then(os =>
                 os.get(clipName).onsuccess = function () {
@@ -45,6 +49,14 @@ function App() {
             );
             return;
         }
+
+        setRecordings(p => [
+            ...p.filter(x => x.label !== clipName),
+            {
+                ...p.find(x => x.label === clipName)!,
+                transcriptionStatus: "in-progress"
+            }
+        ]);
 
         const result = await openai.audio.transcriptions.create({
             file: new File([blob], "audio.ogg"),
@@ -62,7 +74,8 @@ function App() {
             ...p.filter(x => x.label !== clipName),
             {
                 ...p.find(x => x.label === clipName)!,
-                transcription: result.text
+                transcription: result.text,
+                transcriptionStatus: "done"
             }
         ]);
     }
@@ -76,7 +89,8 @@ function App() {
                     setRecordings(p => [...p, {
                         url: window.URL.createObjectURL((r.value as RecordingData).audio),
                         label: String(r.key),
-                        transcription: (r.value as RecordingData).transcription
+                        transcription: (r.value as RecordingData).transcription,
+                        transcriptionStatus: (r.value as RecordingData).transcription !== "" ? "done" : "unavailable"
                     }]);
                     r.continue();
                 }
@@ -100,7 +114,8 @@ function App() {
                         recorder.onstop = () => {
                             console.log("recorder stopped");
 
-                            const clipName = new Date().toString();
+                            const date = new Date();
+                            const clipName = date.toDateString() + " " + date.toLocaleTimeString();
                             const blob = new Blob(chunks, {type: "audio/ogg; codecs=opus"});
                             chunks = [];
 
@@ -110,18 +125,17 @@ function App() {
                                     audio: blob
                                 }, clipName);
 
-                                if (openai.apiKey && navigator.onLine) {
-                                    transcribe(clipName, blob);
-                                }
-
                                 os.get(clipName).onsuccess = function () {
                                     const r = this.result as RecordingData;
 
                                     setRecordings(p => [...p, {
                                         url: window.URL.createObjectURL(r.audio),
                                         label: clipName,
-                                        transcription: r.transcription,
+                                        transcription: "",
+                                        transcriptionStatus: online ? "in-progress" : "unavailable"
                                     }]);
+
+                                    transcribe(clipName, r.audio);
                                 };
                             });
 
@@ -173,27 +187,13 @@ function App() {
                 <button onClick={startRecording}>Record</button>
             </div>}
 
-            {stream ? <DetectFrequency stream={stream!}/> : <></>}
+            {stream ? <FrequencyChart stream={stream!}/> : <></>}
 
-            <div>
-                <br/>
+            <div className={style['clips']}>
                 {recordings
                     .sort((a, b) => b.label.localeCompare(a.label))
                     .map((r, ix) => (
-                        <div key={r.label}>
-                            {r.label}
-                            <br/>
-                            <audio key={ix} controls src={r.url}/>
-                            <br/>
-                            {
-                                r.transcription === "" ?
-                                    <button onClick={() => transcribe(r.label)}>Transcribe</button>
-                                    : r.transcription
-                            }
-                            <br/>
-                            <button onClick={() => deleteRecording(r.label)}>Delete</button>
-                            <hr/>
-                        </div>
+                        <Clip key={ix} recording={r} deleteRecording={deleteRecording} />
                     ))}
             </div>
         </>

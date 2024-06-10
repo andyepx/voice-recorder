@@ -114,7 +114,7 @@ const notes: { n: string, h: number, power?: number }[] = [
     // {n: 'B8', h: 7902.13}
 ];
 
-export function DetectFrequency({stream}: { stream: MediaStream }) {
+export function FrequencyChart({stream}: { stream: MediaStream }) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
