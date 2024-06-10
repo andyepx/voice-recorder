@@ -43,6 +43,6 @@ export function Clip({recording, deleteRecording}: { recording: Recording, delet
                     </>
             }
         </div>
-        <audio key={recording.url} controls src={recording.url}/>
+        <audio data-testid="audio-player" key={recording.url} controls src={recording.url}/>
     </div>;
 }
