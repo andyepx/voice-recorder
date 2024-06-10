@@ -3,12 +3,14 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {FrequencyChart} from "../frequencyChart/frequencyChart.tsx";
 import {useEffect, useState} from "react";
 import {getObjectStore} from "../../utils/objectStore.ts";
-import {faMicrophone, faPause, faStop} from "@fortawesome/free-solid-svg-icons";
+import {faCircle, faMicrophone, faPause, faStop} from "@fortawesome/free-solid-svg-icons";
 
 export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, audio: Blob) => void }) {
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
     const [recordingState, setRecordingState] = useState<RecordingState>("inactive");
+
+    const [recordingTime, setRecordingTime] = useState<number>(0);
 
     const startRecording = () => {
         if (recordingState !== "inactive") return;
@@ -47,6 +49,7 @@ export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, 
 
                         recorder.start();
                         setRecordingState(recorder.state);
+                        setRecordingTime(1);
 
                         setMediaRecorder(recorder);
                     }
@@ -54,10 +57,17 @@ export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, 
         }
     }
 
+    useEffect(() => {
+        if (recordingTime > 0 && recordingState === "recording") {
+            setTimeout(() => setRecordingTime(recordingTime + 1), 1000);
+        }
+    }, [recordingTime, recordingState]);
+
     const stopRecording = () => {
         if (!mediaRecorder) return;
         mediaRecorder.stop();
         setRecordingState(mediaRecorder.state);
+        setRecordingTime(0);
     }
 
     const pauseResumeRecording = () => {
@@ -75,10 +85,16 @@ export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, 
     return <div className={style['recorder']}>
         <button className={style['small']} onClick={pauseResumeRecording}
                 hidden={mediaRecorder === null}>
-            <FontAwesomeIcon icon={faPause} size={"sm"}/>
+            <FontAwesomeIcon icon={recordingState === "recording" ? faPause : faCircle} size={"sm"}/>
         </button>
         <button>
-            <FontAwesomeIcon icon={faMicrophone} size={"xl"} onClick={startRecording}/>
+            {
+                recordingState === "recording" || recordingState === "paused" ?
+                    <span>
+                        {(recordingTime / 60).toFixed(0).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+                    </span>
+                    : <FontAwesomeIcon icon={faMicrophone} size={"xl"} onClick={startRecording}/>
+            }
         </button>
         <button className={style['small']}
                 hidden={mediaRecorder === null}>

@@ -20,9 +20,13 @@
     width: 8rem;
     height: 8rem;
 
+    box-shadow: 1px 3px .5rem rgba(0, 0, 0, .1);
+    color: var(--theme-pink);
+
     &.small {
       width: 4rem;
       height: 4rem;
+      color: var(--theme-pink-dark);
     }
   }
 

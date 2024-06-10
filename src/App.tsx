@@ -6,6 +6,8 @@ import {getObjectStore} from "./utils/objectStore.ts";
 import {Recording, RecordingData} from "./types";
 import {Clip} from "./components/clip/clip.tsx";
 import {Recorder} from "./components/recorder/recorder.tsx";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faOtter} from "@fortawesome/free-solid-svg-icons";
 
 const openai = new OpenAI({
     apiKey: localStorage.getItem("OPENAI_API_KEY") || "",
@@ -114,11 +116,18 @@ function App() {
 
 
             <div className={style['clips']}>
-                {recordings
-                    .sort((a, b) => b.label.localeCompare(a.label))
-                    .map((r, ix) => (
-                        <Clip key={r.label} recording={r} deleteRecording={deleteRecording}/>
-                    ))}
+                {
+                    recordings.length > 0 ?
+                        recordings
+                            .sort((a, b) => b.label.localeCompare(a.label))
+                            .map((r, ix) => (
+                                <Clip key={r.label} recording={r} deleteRecording={deleteRecording}/>
+                            )) :
+                        <div className={style['clips-placeholder']}>
+                            <FontAwesomeIcon icon={faOtter} size={"4x"} style={{marginBottom: '1rem'}} />
+                            Hit record to create and save your first voice memo.
+                        </div>
+                }
             </div>
         </>
     )
