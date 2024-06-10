@@ -91,7 +91,7 @@ export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, 
             {
                 recordingState === "recording" || recordingState === "paused" ?
                     <span>
-                        {(recordingTime / 60).toFixed(0).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+                        {Math.floor(recordingTime / 60).toFixed(0).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
                     </span>
                     : <FontAwesomeIcon icon={faMicrophone} size={"xl"} onClick={startRecording}/>
             }
