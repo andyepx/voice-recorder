@@ -1,30 +1,40 @@
 # Voice Recorder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a simple voice recorder app built in React.
 
-Currently, two official plugins are available:
+## Implementation
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This app uses the [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) to record audio
+and stores the recorded clips as `Blob` in the users' browsers
+using [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API).
 
-## Expanding the ESLint configuration
+The app also uses the OpenAI Whisper API to transcribe the recorded audio to text. As this API is not free to use, a key
+is required to transcribe the clips correctly. You can provide your own API key by adding a `OPEANAI_API_KEY` query
+parameter when loading the app.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## How to use
 
-- Configure the top-level `parserOptions` property like this:
+```bash
+# Clone this repository
+$ git clone
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+# Go into the repository
+$ cd voice-recorder
+
+# Install dependencies
+$ npm install
+
+# Run the app
+$ npm start
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Demo
+
+You can see a demo of this app at https://andyepx.github.io/voice-recorder/?OPENAI_API_KEY={YOUR_KEY}.
+
+## Future improvements
+
+- Implement a local light LLM model for offline transcription
+- Add pagination for > 10 clips on one page
+- Sorting / filtering of clips
+- Add an option to export clips
