@@ -10,7 +10,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faOtter} from "@fortawesome/free-solid-svg-icons";
 
 const openai = new OpenAI({
-    apiKey: localStorage.getItem("OPENAI_API_KEY") || "",
+    apiKey: new URL(window.location.toString()).searchParams.get("OPENAI_API_KEY") || "",
     dangerouslyAllowBrowser: true
 });
 
