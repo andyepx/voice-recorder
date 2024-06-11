@@ -12,6 +12,11 @@
 
   width: calc(33% - 1rem);
 
+  @media (max-width: 768px) {
+    width: 100%;
+    margin: .5rem 0;
+  }
+
   &:hover, &.active {
     box-shadow: 0 0 3px var(--theme-pink);
     border-color: var(--theme-pink-dark);

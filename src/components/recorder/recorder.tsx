@@ -19,7 +19,9 @@ export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, 
             navigator.mediaDevices
                 .getUserMedia({audio: true})
                 .then((stream) => {
-                        const recorder = new MediaRecorder(stream);
+                        stream.getTracks().forEach(t => console.log(t));
+
+                        const recorder = new MediaRecorder(stream, {mimeType: "audio/webm"});
 
                         let chunks: Blob[] = [];
                         recorder.ondataavailable = (e) => {
@@ -29,7 +31,7 @@ export function Recorder({recordingSaved}: { recordingSaved: (clipName: string, 
                         recorder.onstop = () => {
                             const date = new Date();
                             const clipName = date.toDateString() + " " + date.toLocaleTimeString();
-                            const blob = new Blob(chunks, {type: "audio/ogg; codecs=opus"});
+                            const blob = new Blob(chunks, {type: "audio/webm"});
                             chunks = [];
 
                             getObjectStore().then(os => {

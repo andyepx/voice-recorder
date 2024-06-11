@@ -141,6 +141,8 @@ export function FrequencyChart({mediaRecorder}: { mediaRecorder: MediaRecorder |
             micSource.connect(gainNode);
             micSource.connect(analyser);
 
+            gainNode.gain.value = 0;
+
             setIntervalId(setInterval(getTones, 50) as unknown as number);
         } else {
             if (intervalId) {
