@@ -57,7 +57,7 @@ function App() {
         ]);
 
         const result = await openai.audio.transcriptions.create({
-            file: new File([blob], "audio.ogg"),
+            file: new File([blob], "audio." + blob.type.split('/')[1], {type: blob.type}),
             model: "whisper-1",
         });
 
@@ -124,7 +124,7 @@ function App() {
                                 <Clip key={r.label} recording={r} deleteRecording={deleteRecording}/>
                             )) :
                         <div className={style['clips-placeholder']}>
-                            <FontAwesomeIcon icon={faOtter} size={"4x"} style={{marginBottom: '1rem'}} />
+                            <FontAwesomeIcon icon={faOtter} size={"4x"} style={{marginBottom: '1rem'}}/>
                             Hit record to create and save your first voice memo.
                         </div>
                 }
