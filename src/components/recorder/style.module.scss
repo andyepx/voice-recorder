@@ -35,4 +35,8 @@
     z-index: 0;
     top: 0;
   }
+
+  @media (prefers-color-scheme: dark) {
+    background: linear-gradient(to bottom, #201330, #2c1124);
+  }
 }

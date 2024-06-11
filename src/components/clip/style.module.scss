@@ -75,5 +75,6 @@
 
   @media (prefers-color-scheme: dark) {
     background: var(--theme-background);
+    border-color: var(--theme-grey-dark);
   }
 }
